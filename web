@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Postdata Recetas – Generador</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root { --bg:#fff; --fg:#111; --muted:#f4f4f4; --bd:#e5e5e5; --accent:#0b6; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Arial, sans-serif;
+      background: var(--bg); color: var(--fg); margin: 0; padding: 24px;
+    }
+    .card {
+      max-width: 720px; margin: 0 auto; background: var(--muted);
+      border: 1px solid var(--bd); border-radius: 14px; padding: 20px;
+    }
+    h1 { margin: 0 0 12px; font-size: 1.4rem; }
+    label { display:block; margin: 12px 0 6px; }
+    input, button {
+      padding: 10px 12px; border:1px solid var(--bd); border-radius:10px; font-size: 1rem;
+    }
+    input { width: 100%; background: #fff; }
+    button {
+      background: var(--accent); color: white; border: none; cursor: pointer; margin-top: 12px;
+    }
+    ul { margin-top: 12px; padding-left: 20px; }
+    .note { font-size: .9rem; color: #444; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Generar fechas “postdata” (lunes, +50 a +58 días)</h1>
+    <p class="note">
+      Ingresá la <b>fecha base</b> (última receta). Formatos aceptados: <code>DD/MM/YYYY</code>, <code>YYYY-MM-DD</code> o <code>DD-MM-YYYY</code>.
+      Si dejás vacío, se usa la fecha de hoy.
+    </p>
+
+    <label for="base">Fecha base</label>
+    <input id="base" type="text" placeholder="12/11/2025">
+
+    <label for="count">Cantidad (default 6)</label>
+    <input id="count" type="number" min="1" max="24" value="6">
+
+    <button id="go">Generar</button>
+
+    <ul id="out"></ul>
+
+    <p class="note">Regla: se elige el <b>primer lunes</b> disponible dentro de la ventana de <b>50–58 días</b>.</p>
+  </div>
+
+  <script>
+  function parseDate(s) {
+    if (!s) return new Date(); // hoy (según TZ del sistema)
+    const tryFmt = [
+      { re: /^(\d{2})\/(\d{2})\/(\d{4})$/, map: m => new Date(+m[3], +m[2]-1, +m[1]) }, // DD/MM/YYYY
+      { re: /^(\d{4})-(\d{2})-(\d{2})$/, map: m => new Date(+m[1], +m[2]-1, +m[3]) }, // YYYY-MM-DD
+      { re: /^(\d{2})-(\d{2})-(\d{4})$/, map: m => new Date(+m[3], +m[2]-1, +m[1]) }, // DD-MM-YYYY
+    ];
+    for (const f of tryFmt) {
+      const m = s.match(f.re);
+      if (m) return f.map(m);
+    }
+    throw new Error("Formato de fecha no reconocido.");
+  }
+
+  function addDays(d, n) {
+    const x = new Date(d.getTime());
+    x.setDate(x.getDate() + n);
+    return x;
+  }
+
+  function isMonday(d) { return d.getDay() === 1; } // 1 = lunes
+
+  function fmt(d) {
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth()+1).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+  }
+
+  function firstMondayInWindow(start, min=50, max=58) {
+    for (let k=min; k<=max; k++) {
+      const cand = addDays(start, k);
+      if (isMonday(cand)) return cand;
+    }
+    return null;
+  }
+
+  function generate(base, count=6) {
+    const out = [];
+    let prev = base;
+    for (let i=0; i<count; i++) {
+      const m = firstMondayInWindow(prev, 50, 58);
+      if (!m) throw new Error(`No hay lunes entre +50 y +58 días luego de ${fmt(prev)}.`);
+      out.push(m);
+      prev = m;
+    }
+    return out;
+  }
+
+  document.getElementById('go').addEventListener('click', () => {
+    const out = document.getElementById('out');
+    out.innerHTML = '';
+    try {
+      const baseStr = document.getElementById('base').value.trim();
+      const count = Math.max(1, Math.min(24, +document.getElementById('count').value || 6));
+      const base = parseDate(baseStr);
+      const dates = generate(base, count);
+      dates.forEach((d,i) => {
+        const li = document.createElement('li');
+        li.textContent = `${i+1}) ${fmt(d)}`;
+        out.appendChild(li);
+      });
+    } catch (e) {
+      const li = document.createElement('li');
+      li.style.color = 'crimson';
+      li.textContent = `ERROR: ${e.message}`;
+      out.appendChild(li);
+    }
+  });
+  </script>
+</body>
+</html>
