@@ -17,4 +17,6 @@ Ejecutar desde la terminal:
 
 ```bash
 python postdata.py   # usa la fecha de hoy del sistema
+## 🌐 Versión Web
+Usá el generador desde el navegador: [Abrir herramienta](https://<tu-usuario>.github.io/<tu-repo>/)
 
