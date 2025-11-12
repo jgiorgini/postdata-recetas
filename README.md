@@ -11,9 +11,10 @@ Genera las próximas 6 fechas de recetas **“postdatadas”**: siempre en **lun
 
 ---
 
-## ⚙️ Uso (CLI Python)
+## Uso (CLI Python)
 
 Ejecutar desde la terminal:
 
 ```bash
-python postdata.py --base "12/11/2025" --count 6
+python postdata.py   # usa la fecha de hoy del sistema
+
